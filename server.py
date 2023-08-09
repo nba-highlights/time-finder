@@ -92,7 +92,7 @@ def add_timestamp():
         response = s3.head_object(Bucket=bucket, Key=object_key)
         # Extract metadata from the response
         metadata = response.get('Metadata', {})
-        metadata_game_id_key = "x-amz-meta-game-id"
+        metadata_game_id_key = "game-id"
         app.logger.info(f"Got metadata {metadata}.")
         game_id = metadata[metadata_game_id_key]
 
