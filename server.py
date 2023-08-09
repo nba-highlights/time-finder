@@ -93,7 +93,7 @@ def add_timestamp():
         # Extract metadata from the response
         metadata = response.get('Metadata', {})
         metadata_game_id_key = "x-amz-meta-game-id"
-
+        app.logger.info(f"Got metadata {metadata}.")
         game_id = metadata[metadata_game_id_key]
 
         app.logger.info(f"Received following message: {message}")
