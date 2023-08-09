@@ -2,13 +2,11 @@
 
 import json
 import logging
-from io import BytesIO
+from pathlib import Path
 
 import boto3
 import cv2
-
-from pathlib import Path
-
+import numpy as np
 import requests
 from flask import Flask, request, jsonify
 
@@ -43,6 +41,20 @@ def confirm_subscription(request_header, request_data):
                                "subscription to confirm."}), 500
 
 
+def find_in_game_time(image: np.array):
+    """Finds the quarter and in game time of the provided image.
+
+    The quarter is either 1, 2, 3, or 4. The in game time is given in seconds for that quarter.
+
+    :arg
+        image (np.array): the image of which to find the game time and the quarter.
+
+    :return
+        (int, int): the quarter and in game time in seconds.
+    """
+    return 0, 0
+
+
 @app.route('/add-timestamp', methods=['POST'])
 def add_timestamp():
     request_data = request.data.decode('utf-8')
@@ -75,12 +87,53 @@ def add_timestamp():
         # download object
         s3 = boto3.client('s3')
 
+        app.logger.info(f"Extracting Game ID Metadata for {object_key} from {bucket}.")
+        # Retrieve the object's metadata using head_object
+        response = s3.head_object(Bucket=bucket, Key=object_key)
+        # Extract metadata from the response
+        metadata = response.get('Metadata', {})
+        metadata_game_id_key = "x-amz-meta-game-id"
+
+        game_id = metadata[metadata_game_id_key]
+
         app.logger.info(f"Received following message: {message}")
         app.logger.info(f"Downloading Object: {object_key} from Bucket: {bucket}.")
 
         with open(frame_path, 'wb') as file:
             s3.download_fileobj(bucket, object_key, file)
-            app.logger.info("Download successful.")
+            app.logger.info(f"Download successful. Image stored at {frame_path}.")
+
+        app.logger.info(f"Reading frame from {frame_path}.")
+        image = cv2.imread(frame_path)
+        image = np.array(image)
+
+        app.logger.info(f"Finding in game time and quarter.")
+        quarter, time = find_in_game_time(image)
+
+        primary_key_name = "id"
+        primary_key_value = f"{game_id}_{bucket}_{object_key}"
+
+        game_id_key = "game-id"
+        s3_bucket_key = "s3-bucket"
+        s3_object_key = "s3-object"
+        quarter_key = "quarter"
+        time_key = "time"
+
+        item_to_write = {
+            primary_key_name: primary_key_value,
+            game_id_key: game_id,
+            s3_bucket_key: bucket,
+            s3_object_key: object_key,
+            quarter_key: quarter,
+            time_key: time
+        }
+
+        table_name = "nba-game-frames"
+        dynamodb = boto3.client('dynamodb')
+
+        app.logger.info(f"Writing {item_to_write} object to DynamoDB Table {table_name}.")
+        table = dynamodb.Table(table_name)
+        table.put_item(Item=item_to_write)
 
     return jsonify({'message': 'Hello from the endpoint'}), 200
 
