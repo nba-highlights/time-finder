@@ -111,7 +111,7 @@ def add_timestamp():
         quarter, time = find_in_game_time(image)
 
         primary_key_name = "id"
-        primary_key_value = f"{game_id}_{bucket}_{object_key}"
+        primary_key_value = f"{game_id}_{bucket}_{object_key.split('/')[-1]}"
 
         game_id_key = "game-id"
         s3_bucket_key = "s3-bucket"
