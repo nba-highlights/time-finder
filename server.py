@@ -128,7 +128,7 @@ def add_timestamp():
         }
 
         table_name = "nba-game-frames"
-        dynamodb = boto3.client('dynamodb')
+        dynamodb = boto3.resource('dynamodb')
 
         app.logger.info(f"Writing {item_to_write} object to DynamoDB Table {table_name}.")
         table = dynamodb.Table(table_name)
