@@ -80,9 +80,8 @@ def add_timestamp():
         bucket = detail["bucket"]["name"]
         object_key = detail["object"]["key"]
 
-        frame_dir = "temp-frame"
-        Path(frame_dir).mkdir(parents=True, exist_ok=True)
-        frame_path = f"{frame_dir}/{object_key}"
+        frame_path = f"temp-frame/{object_key}"
+        Path(frame_path).parent.mkdir(parents=True, exist_ok=True)
 
         # download object
         s3 = boto3.client('s3')
