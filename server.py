@@ -147,6 +147,11 @@ def add_timestamp():
     return jsonify({'message': 'Hello from the endpoint'}), 200
 
 
+@app.route('/health', methods=["GET"])
+def health_check():
+    return jsonify({"message": "Health Check OK"}), 200
+
+
 @app.route('/hello-world', methods=['GET'])
 def hello_world():
     return "Hello World"
