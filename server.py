@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 
 import boto3
@@ -110,7 +111,7 @@ def add_timestamp():
         quarter, time = find_in_game_time(image)
 
         primary_key_name = "id"
-        primary_key_value = f"{game_id}_{bucket}_{object_key}"
+        primary_key_value = f"{game_id}_{bucket}_{object_key.split('/')[-1]}"
 
         game_id_key = "game-id"
         s3_bucket_key = "s3-bucket"
@@ -132,7 +133,16 @@ def add_timestamp():
 
         app.logger.info(f"Writing {item_to_write} object to DynamoDB Table {table_name}.")
         table = dynamodb.Table(table_name)
-        table.put_item(Item=item_to_write)
+
+        try:
+            table.put_item(Item=item_to_write)
+            app.logger.info(f"Item {item_to_write} successfully written to DynamoDB Table {table_name}.")
+            os.remove(frame_path)
+            app.logger.info(f"Successfully removed local file {frame_path}.")
+        except OSError as e:
+            app.logger.warning(f"Could not remove local frame: {frame_path}", exc_info=e)
+        except Exception as e:
+            app.logger.warning(f"Problem occurred while writing {item_to_write} to DynamoDB table {table_name}.", exc_info=e)
 
     return jsonify({'message': 'Hello from the endpoint'}), 200
 
